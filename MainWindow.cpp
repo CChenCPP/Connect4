@@ -1,5 +1,5 @@
 #include "MainWindow.h"
-#include "UI_MainWindow.h"
+#include "ui_MainWindow.h"
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -306,3 +306,9 @@ void MainWindow::on_newGamePushButton_clicked()
         }
     }
 }
+
+void MainWindow::on_newGameAIPushButton_clicked()
+{
+
+}
+

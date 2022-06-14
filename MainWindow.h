@@ -40,6 +40,8 @@ private slots:
     void onPlayerWon(std::string color);
     void on_newGamePushButton_clicked();
 
+    void on_newGameAIPushButton_clicked();
+
 signals:
     void boardUpdated(int row, int column, std::string color);
     void connect4(int rowStart, int columnStart, int rowEnd, int columnEnd);
