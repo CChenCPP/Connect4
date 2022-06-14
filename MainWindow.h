@@ -1,6 +1,7 @@
 #pragma once
 #include <QMainWindow>
 #include <CustomPushButton.h>
+#include <AI.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,6 +31,7 @@ private:
     void disableBoard();
     void enableBoard();
     void initBoard(int rows, int columns);
+    int monteCarloSim(int sims);
 
 private slots:
     void buttonClicked(int row, int column);

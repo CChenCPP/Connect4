@@ -156,6 +156,66 @@ void MainWindow::initBoard(int rows, int columns)
     }
 }
 
+int MainWindow::monteCarloSim(int sims)
+{
+    std::vector<int> winOccurences(board[0].size());
+    std::vector<std::vector<std::string>> simBoard;
+    std::vector<int> availableMoves;
+
+    // find all possible remaining moves
+    for (int row = 0; row < rows; ++row) {
+        for (int column = 0; column < columns; ++column) {
+            if (board[row][column] == "") {
+                availableMoves.push_back(column);
+            }
+        }
+    };
+
+    // sim random first move and fill board randomly until full. Run dijkstra to determine if there is a win.
+    for (int i = 0; i < sims; ++i) {
+        simBoard = board;
+        std::string currentColor = this->color;
+
+        // copy vector of available moves for each sim
+        std::vector<int> availableColumns = availableMoves;
+
+        // first move by AI
+        int index = RNG::randomInt(0, availableColumns.size() - 1);
+        int column = availableColumns[index];
+        int trueRow = AI::determineInsertPosition(0, column, simBoard).value();
+        simBoard[trueRow][column] = currentColor;
+        availableColumns.erase(availableColumns.begin() + index);
+        if (AI::checkWin(trueRow,column,simBoard)) { winOccurences[column]++; continue; };
+        currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
+
+        while (availableColumns.size() > 0) {
+            // remaining moves based on available positions
+            int index2 = RNG::randomInt(0, availableColumns.size() - 1);
+            int column2 = availableColumns[index2];
+            int trueRow2 = AI::determineInsertPosition(0, column2, simBoard).value();
+            simBoard[trueRow2][column2] = currentColor;
+            availableColumns.erase(availableColumns.begin() + index);
+            if (AI::checkWin(trueRow,column,simBoard) && currentColor == "BLACK") { winOccurences[column]++; continue; };
+            currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
+        }
+    }
+
+    // determine best move by win occurence of each first move
+    int bestMoveColumn = 0;
+    for (int column = 0; column < winOccurences.size(); ++column) {
+        if (winOccurences[column] >= winOccurences[bestMoveColumn]){
+            bestMoveColumn = column;
+        }
+    };
+
+    // incase there were no victories in all simulations, pick a random available move
+    if (winOccurences[bestMoveColumn] == 0) {
+        bestMoveColumn = availableMoves[RNG::randomInt(0, availableMoves.size() - 1)];
+    }
+
+    return bestMoveColumn;
+}
+
 // private slots
 void MainWindow::buttonClicked(int row, int column)
 {
