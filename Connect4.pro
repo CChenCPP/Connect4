@@ -10,16 +10,19 @@ CONFIG += c++20
 
 SOURCES += \
     AI.cpp \
+    AIPromptWindow.cpp \
     CustomPushButton.cpp \
     main.cpp \
     MainWindow.cpp
 
 HEADERS += \
     AI.h \
+    AIPromptWindow.h \
     CustomPushButton.h \
     MainWindow.h
 
 FORMS += \
+    AIPromptWindow.ui \
     MainWindow.ui
 
 # Default rules for deployment.

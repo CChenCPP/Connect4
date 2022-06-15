@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include <QMessageBox>
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -10,14 +11,18 @@ MainWindow::MainWindow(QWidget *parent)
     , filledSlots(0)
     , color("RED")
     , gameOver(false)
+    , AI(false)
+    , aiPromptWindow(new AIPromptWindow())
 {
     UI->setupUi(this);
-    this->setWindowTitle("Connect 4");
+    setWindowTitle("Connect 4");
+    setFixedSize(size());
     initBoard(rows,columns);
     disableBoard();
     connect(this,SIGNAL(boardUpdated(int,int,std::string)),this,SLOT(onBoardUpdated(int,int,std::string)));
-    connect(this,SIGNAL(connect4(int,int,int,int)),this,SLOT(onConnect4(int,int,int,int)));
+    connect(this,SIGNAL(connect4(int,int,int,int,std::string)),this,SLOT(onConnect4(int,int,int,int,std::string)));
     connect(this,SIGNAL(playerWon(std::string)),this,SLOT(onPlayerWon(std::string)));
+    connect(aiPromptWindow,SIGNAL(humanColorSelection(std::string)),this,SLOT(onColorPerferenceSelected(std::string)));
 }
 
 MainWindow::~MainWindow()
@@ -25,9 +30,24 @@ MainWindow::~MainWindow()
     delete UI;
 }
 
-bool MainWindow::checkBottom(int row, int column)
+void MainWindow::AImove()
 {
-    std::string color = board[row][column];
+    if (gameOver) { return; };
+    int column = AI::monteCarloSim(board, AIcolor, 100000);
+    std::optional<int> trueRow = determineInsertPosition(0,column);
+    CustomPushButton* button = static_cast<CustomPushButton*>(UI->boardGrid->itemAtPosition(trueRow.value(),column)->widget());
+    QPixmap icon((AIcolor == "BLACK") ? ":/Resources/Images/black_dot.png" : ":/Resources/Images/red_dot.png");
+    button->setIcon(icon);
+    board[trueRow.value()][column] = AIcolor;
+    ++filledSlots;
+    emit boardUpdated(trueRow.value(),column, AIcolor);
+    if (!gameOver) {
+        color = (color == "BLACK") ? "RED" : "BLACK";
+        UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + "'s turn"); };
+}
+
+bool MainWindow::checkBottom(int row, int column, std::string color)
+{
     int consecutive = 1;
     int endRow = row;
     // check bottom
@@ -35,14 +55,13 @@ bool MainWindow::checkBottom(int row, int column)
         ++consecutive;
         ++endRow;
     }
-    if (consecutive >= 4) { emit connect4(row, column, endRow, column); return true; };
+    if (consecutive >= 4) { emit connect4(row, column, endRow, column, color); return true; };
 
     return false;
 }
 
-bool MainWindow::checkLeftRight(int row, int column)
+bool MainWindow::checkLeftRight(int row, int column, std::string color)
 {
-    std::string color = board[row][column];
     int consecutive = 1;
     int startColumn = column;
     int endColumn = column;
@@ -56,15 +75,13 @@ bool MainWindow::checkLeftRight(int row, int column)
         ++consecutive;
         ++endColumn;
     }
-    if (consecutive >= 4) { emit connect4(row, startColumn, row, endColumn); return true; };
+    if (consecutive >= 4) { emit connect4(row, startColumn, row, endColumn, color); return true; };
 
     return false;
 }
 
-bool MainWindow::checkDiagonal(int row, int column)
+bool MainWindow::checkDiagonal(int row, int column, std::string color)
 {
-    std::string color = board[row][column];
-
     int consecutive = 1;
     int startRow = row;
     int endRow = row;
@@ -81,7 +98,7 @@ bool MainWindow::checkDiagonal(int row, int column)
         --startRow;
         --startColumn;
     }
-    if (consecutive >= 4) { emit connect4(startRow, startColumn, endRow, endColumn); return true; };
+    if (consecutive >= 4) { emit connect4(startRow, startColumn, endRow, endColumn, color); return true; };
 
     consecutive = 1;
     startRow = row;
@@ -99,7 +116,7 @@ bool MainWindow::checkDiagonal(int row, int column)
         --startRow;
         ++endColumn;
     }
-    if (consecutive >= 4) { emit connect4(endRow, startColumn, startRow, endColumn); return true; };
+    if (consecutive >= 4) { emit connect4(endRow, startColumn, startRow, endColumn, color); return true; };
 
     return false;
 }
@@ -122,8 +139,7 @@ void MainWindow::disableBoard()
     for (int i = 0; i < UI->boardGrid->rowCount(); ++i){
         for (int j = 0; j < UI->boardGrid->columnCount(); ++j){
             QPushButton* button = static_cast<QPushButton*>(UI->boardGrid->itemAtPosition(i,j)->widget());
-            button->blockSignals(true);
-            button->setDisabled(true);
+            if (board[i][j] == "") { button->setDisabled(true); };
         }
     }
 }
@@ -133,7 +149,6 @@ void MainWindow::enableBoard()
     for (int i = 0; i < UI->boardGrid->rowCount(); ++i){
         for (int j = 0; j < UI->boardGrid->columnCount(); ++j){
             QPushButton* button = static_cast<QPushButton*>(UI->boardGrid->itemAtPosition(i,j)->widget());
-            button->blockSignals(false);
             button->setEnabled(true);
         }
     }
@@ -156,64 +171,21 @@ void MainWindow::initBoard(int rows, int columns)
     }
 }
 
-int MainWindow::monteCarloSim(int sims)
+void MainWindow::reset()
 {
-    std::vector<int> winOccurences(board[0].size());
-    std::vector<std::vector<std::string>> simBoard;
-    std::vector<int> availableMoves;
-
-    // find all possible remaining moves
-    for (int row = 0; row < rows; ++row) {
-        for (int column = 0; column < columns; ++column) {
-            if (board[row][column] == "") {
-                availableMoves.push_back(column);
-            }
-        }
-    };
-
-    // sim random first move and fill board randomly until full. Run dijkstra to determine if there is a win.
-    for (int i = 0; i < sims; ++i) {
-        simBoard = board;
-        std::string currentColor = this->color;
-
-        // copy vector of available moves for each sim
-        std::vector<int> availableColumns = availableMoves;
-
-        // first move by AI
-        int index = RNG::randomInt(0, availableColumns.size() - 1);
-        int column = availableColumns[index];
-        int trueRow = AI::determineInsertPosition(0, column, simBoard).value();
-        simBoard[trueRow][column] = currentColor;
-        availableColumns.erase(availableColumns.begin() + index);
-        if (AI::checkWin(trueRow,column,simBoard)) { winOccurences[column]++; continue; };
-        currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
-
-        while (availableColumns.size() > 0) {
-            // remaining moves based on available positions
-            int index2 = RNG::randomInt(0, availableColumns.size() - 1);
-            int column2 = availableColumns[index2];
-            int trueRow2 = AI::determineInsertPosition(0, column2, simBoard).value();
-            simBoard[trueRow2][column2] = currentColor;
-            availableColumns.erase(availableColumns.begin() + index);
-            if (AI::checkWin(trueRow,column,simBoard) && currentColor == "BLACK") { winOccurences[column]++; continue; };
-            currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
+    gameOver = false;
+    board.clear();
+    board = std::vector(rows,std::vector<std::string>(columns));
+    filledSlots = 0;
+    enableBoard();
+    color = "RED";
+    UI->playerTurnLineEdit->setText("Player RED's turn");
+    for (int i = 0; i < UI->boardGrid->rowCount(); ++i){
+        for (int j = 0; j < UI->boardGrid->columnCount(); ++j){
+            QPushButton* button = static_cast<QPushButton*>(UI->boardGrid->itemAtPosition(i,j)->widget());
+            button->setIcon(QIcon());
         }
     }
-
-    // determine best move by win occurence of each first move
-    int bestMoveColumn = 0;
-    for (int column = 0; column < winOccurences.size(); ++column) {
-        if (winOccurences[column] >= winOccurences[bestMoveColumn]){
-            bestMoveColumn = column;
-        }
-    };
-
-    // incase there were no victories in all simulations, pick a random available move
-    if (winOccurences[bestMoveColumn] == 0) {
-        bestMoveColumn = availableMoves[RNG::randomInt(0, availableMoves.size() - 1)];
-    }
-
-    return bestMoveColumn;
 }
 
 // private slots
@@ -240,9 +212,20 @@ void MainWindow::buttonClicked(int row, int column)
     emit boardUpdated(trueRow.value(),column, color);
     color = (color == "BLACK") ? "RED" : "BLACK";
     UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + "'s turn");
+
+    if (AI && !gameOver) {
+        disableBoard();
+        UI->playerTurnLineEdit->setText("A.I. calculating move...");
+        QTimer::singleShot(RNG::randomInt(200,400), this, [&](){AImove(); });
+    }
 }
 
-void MainWindow::onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd)
+void MainWindow::onColorPerferenceSelected(std::string color)
+{
+    AIcolor = (color == "BLACK") ? "RED" : "BLACK";
+}
+
+void MainWindow::onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd, std::string color)
 {
     // highlights victory cells
     int rowS = rowStart;
@@ -261,9 +244,9 @@ void MainWindow::onConnect4(int rowStart, int columnStart, int rowEnd, int colum
 
 void MainWindow::onBoardUpdated(int row, int column, std::string color)
 {
-    bool winB = checkBottom(row,column);
-    bool winLR = checkLeftRight(row,column);
-    bool winDiag = checkDiagonal(row,column);
+    bool winB = checkBottom(row, column, color);
+    bool winLR = checkLeftRight(row, column, color);
+    bool winDiag = checkDiagonal(row, column, color);
     enableBoard();
     if (winB || winLR || winDiag){
         emit playerWon(color);
@@ -280,10 +263,12 @@ void MainWindow::onPlayerWon(std::string color)
     gameOver = true;
     QMessageBox messageBox;
     if (color == "DRAW"){
+        UI->playerTurnLineEdit->setText("Draw game");
         messageBox.setWindowTitle("Draw game");
         messageBox.setText(QString("DRAW GAME"));
     }
     else {
+        UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + " victory!");
         messageBox.setWindowTitle("Victory!");
         messageBox.setText(QString("Player " + QString::fromUtf8(color) + " has won!"));
     }
@@ -292,23 +277,15 @@ void MainWindow::onPlayerWon(std::string color)
 
 void MainWindow::on_newGamePushButton_clicked()
 {
-    gameOver = false;
-    board.clear();
-    board = std::vector(rows,std::vector<std::string>(columns));
-    filledSlots = 0;
-    enableBoard();
-    color = "RED";
-    UI->playerTurnLineEdit->setText("Player RED's turn");
-    for (int i = 0; i < UI->boardGrid->rowCount(); ++i){
-        for (int j = 0; j < UI->boardGrid->columnCount(); ++j){
-            QPushButton* button = static_cast<QPushButton*>(UI->boardGrid->itemAtPosition(i,j)->widget());
-            button->setIcon(QIcon());
-        }
-    }
+    AI = false;
+    reset();
 }
 
 void MainWindow::on_newGameAIPushButton_clicked()
 {
-
+    aiPromptWindow->exec();
+    AI = true;
+    reset();
+    if (AIcolor == color) { AImove(); };
 }
 
