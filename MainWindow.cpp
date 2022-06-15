@@ -30,6 +30,7 @@ MainWindow::~MainWindow()
     delete UI;
 }
 
+// private methods
 void MainWindow::AImove()
 {
     if (gameOver) { return; };
@@ -121,7 +122,6 @@ bool MainWindow::checkDiagonal(int row, int column, std::string color)
     return false;
 }
 
-// private methods
 std::optional<int> MainWindow::determineInsertPosition(int row, int column) const
 {
     if (board[row][column] != ""){
