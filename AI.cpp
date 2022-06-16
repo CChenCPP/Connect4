@@ -139,9 +139,9 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
         if (AI::checkWin(trueRow,column,simBoard)) { return column; };
         currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
 
+        // sim remaining moves based on available positions
         long long penalty = 1000000;
         long long moves = 0;
-        // remaining moves based on available positions
         while (availableColumns.size() > 0) {
             int index2 = RNG::randomInt(0, availableColumns.size() - 1);
             int column2 = availableColumns[index2];
@@ -167,15 +167,8 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
     int bestMoveColumn = availableMoves[RNG::randomInt(0,availableMoves.size() - 1)];
     for (int column = 0; column < winProbability.size(); ++column) {
         if (winProbability[column] == 0) { continue; };
-        if (winProbability[column] >= winProbability[bestMoveColumn]){
-            bestMoveColumn = column;
-        }
+        bestMoveColumn = (winProbability[column] >= winProbability[bestMoveColumn]) ? column : bestMoveColumn;
     };
-
-    // incase there were no victories in all simulations, pick a random available move
-    if (winProbability[bestMoveColumn] == 0) {
-        bestMoveColumn = availableMoves[RNG::randomInt(0, availableMoves.size() - 1)];
-    }
 
     return bestMoveColumn;
 }

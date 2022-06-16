@@ -9,7 +9,6 @@ class AIPromptWindow;
 class AIPromptWindow : public QDialog
 {
     Q_OBJECT
-
 public:
     explicit AIPromptWindow(QWidget *parent = nullptr);
     ~AIPromptWindow();
