@@ -17,32 +17,38 @@ public:
     ~MainWindow();
 
 private:
+    static constexpr int minRows = 4;
+    static constexpr int minColumns = 4;
+    static constexpr int defaultRows = 6;
+    static constexpr int defaultColumns = 7;
+    static constexpr int maxRows = 8;
+    static constexpr int maxColumns = 10;
     int rows;
     int columns;
-    int filledSlots;
     std::vector<std::vector<std::string>> board;
-    std::string color;
+    int filledSlots;
     bool gameOver;
-    bool AI;
+    std::string color;
     std::string AIcolor;
+    bool AI;
     Ui::MainWindow* UI;
     AIPromptWindow* aiPromptWindow;
-
     void AImove();
-    bool checkBottom(int row,int column, std::string color);
-    bool checkLeftRight(int row,int column, std::string color);
-    bool checkDiagonal(int row,int column, std::string color);
+    bool checkBottom(int row, int column, std::string& color);
+    bool checkLeftRight(int row, int column, std::string& color);
+    bool checkDiagonal(int row, int column, std::string& color);
+    void createUIBoard();
     std::optional<int> determineInsertPosition(int row, int column) const;
     void disableBoard();
     void enableBoard();
-    void initBoard(int rows, int columns);
+    std::pair<int,int> getNewBoardSize() const;
     void reset();
 
 private slots:
-    void buttonClicked(int row, int column);
+    void onBoardUpdated(int row,int column, std::string color);
     void onColorPerferenceSelected(std::string color);
     void onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd, std::string color);
-    void onBoardUpdated(int row,int column, std::string color);
+    void onCustomPushButtonClicked(int row, int column);
     void onPlayerWon(std::string color);
     void on_newGamePushButton_clicked();
     void on_newGameAIPushButton_clicked();

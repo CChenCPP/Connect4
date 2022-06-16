@@ -1,6 +1,8 @@
 #include "AI.h"
+#include <iostream>
 
-bool AI::checkBottom(int row,int column, std::vector<std::vector<std::string>>& board){
+bool AI::checkBottom(int row, int column, const std::vector<std::vector<std::string>>& board)
+{
     int rows = board.size();
     std::string color = board[row][column];
     int consecutive = 1;
@@ -15,7 +17,8 @@ bool AI::checkBottom(int row,int column, std::vector<std::vector<std::string>>& 
     return false;
 }
 
-bool AI::checkLeftRight(int row,int column, std::vector<std::vector<std::string>>& board){
+bool AI::checkLeftRight(int row, int column, const std::vector<std::vector<std::string>>& board)
+{
     int columns = board[0].size();
     std::string color = board[row][column];
     int consecutive = 1;
@@ -36,7 +39,8 @@ bool AI::checkLeftRight(int row,int column, std::vector<std::vector<std::string>
     return false;
 }
 
-bool AI::checkDiagonal(int row,int column, std::vector<std::vector<std::string>>& board){
+bool AI::checkDiagonal(int row, int column, const std::vector<std::vector<std::string>>& board)
+{
     int rows = board.size();
     int columns = board[0].size();
     std::string color = board[row][column];
@@ -80,7 +84,7 @@ bool AI::checkDiagonal(int row,int column, std::vector<std::vector<std::string>>
     return false;
 }
 
-bool AI::checkWin(int row, int column, std::vector<std::vector<std::string>>& board)
+bool AI::checkWin(int row, int column, const std::vector<std::vector<std::string>>& board)
 {
     bool winB = checkBottom(row, column, board);
     bool winLR = checkLeftRight(row, column, board);
@@ -88,7 +92,8 @@ bool AI::checkWin(int row, int column, std::vector<std::vector<std::string>>& bo
     return winB || winLR || winDiag;
 }
 
-std::optional<int> AI::determineInsertPosition(int row, int column, std::vector<std::vector<std::string>>& board){
+std::optional<int> AI::determineInsertPosition(int row, int column, const std::vector<std::vector<std::string>>& board)
+{
     if (board[row][column] != ""){
         return {};
     }
@@ -99,7 +104,7 @@ std::optional<int> AI::determineInsertPosition(int row, int column, std::vector<
     return trueRow;
 }
 
-int AI::monteCarloSim(std::vector<std::vector<std::string>>& board, std::string AIcolor, int sims)
+int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const std::string& AIcolor, int sims)
 {
     int rows = board.size();
     int columns = board[0].size();
@@ -136,24 +141,30 @@ int AI::monteCarloSim(std::vector<std::vector<std::string>>& board, std::string 
 
         long long penalty = 1000000;
         long long moves = 0;
+        // remaining moves based on available positions
         while (availableColumns.size() > 0) {
-            // remaining moves based on available positions
             int index2 = RNG::randomInt(0, availableColumns.size() - 1);
             int column2 = availableColumns[index2];
             int trueRow2 = AI::determineInsertPosition(0, column2, simBoard).value();
             simBoard[trueRow2][column2] = currentColor;
             availableColumns.erase(availableColumns.begin() + index2);
-            if (AI::checkWin(trueRow2,column2,simBoard) && currentColor == AIcolor) { winProbability[column] += penalty; break; };
-            if (AI::checkWin(trueRow2,column2,simBoard) && currentColor != AIcolor) { winProbability[column] -= penalty; break; }
+            if (AI::checkWin(trueRow2,column2,simBoard) && currentColor != AIcolor) {
+                winProbability[column] -= penalty;
+                break;
+            }
             currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
             ++moves;
-            penalty = (moves % 2 == 0) ? std::pow(penalty, 0.96) : penalty;
+            penalty = (moves != 0 && moves % 2 == 0) ? std::pow(penalty, 0.7) : penalty;
         }
-
     }
 
-    // select move with highest win probability
-    int bestMoveColumn = 0;
+    // for debugging
+    for (int i = 0; i < winProbability.size(); ++i){
+        std::cout << "Column: " << i << " Penalty: " << winProbability[i] << std::endl;
+    }
+
+    // select move with highest win probability (lowest penalty)
+    int bestMoveColumn = availableMoves[RNG::randomInt(0,availableMoves.size() - 1)];
     for (int column = 0; column < winProbability.size(); ++column) {
         if (winProbability[column] == 0) { continue; };
         if (winProbability[column] >= winProbability[bestMoveColumn]){

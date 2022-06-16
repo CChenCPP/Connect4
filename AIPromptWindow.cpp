@@ -6,8 +6,7 @@ AIPromptWindow::AIPromptWindow(QWidget *parent) :
     UI(new Ui::AIPromptWindow)
 {
     UI->setupUi(this);
-    setWindowTitle("Pick a color");
-    this->setWindowFlags(Qt::WindowTitleHint);
+    setWindowTitle("Pick your color");
     UI->redColorButton->setIcon(QPixmap(":/Resources/Images/red_dot.png"));
     UI->blackColorButton->setIcon(QPixmap(":/Resources/Images/black_dot.png"));
 }
