@@ -1,4 +1,5 @@
 #include "AI.h"
+#include <limits>
 #include <iostream>
 
 bool AI::checkBottom(int row, int column, const std::vector<std::vector<std::string>>& board)
@@ -104,75 +105,79 @@ std::optional<int> AI::determineInsertPosition(int row, int column, const std::v
     return trueRow;
 }
 
+int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const std::string& AIcolor)
+{
+    int size = board.size()*board[0].size();
+    int sims = std::pow(std::numeric_limits<int>::max(), 0.6) / size;
+    return monteCarloSim(board, AIcolor, sims);
+}
+
 int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const std::string& AIcolor, int sims)
 {
     int rows = board.size();
     int columns = board[0].size();
-    std::vector<long long> winProbability(columns);
-    std::vector<std::vector<std::string>> simBoard;
-    std::vector<int> availableMoves;
 
     // find all possible remaining moves
+    std::vector<int> allPossibleMoves;
     for (int row = 0; row < rows; ++row) {
         for (int column = 0; column < columns; ++column) {
             if (board[row][column] == "") {
-                availableMoves.push_back(column);
+                allPossibleMoves.push_back(column);
             }
         }
     };
 
-    if (availableMoves.size() == rows * columns) { return RNG::randomInt(0, columns - 1); };
+    if (allPossibleMoves.size() == rows * columns) { return RNG::randomInt(0, columns - 1); };
 
+    std::vector<long long> movePenalty(columns);
     for (int i = 0; i < sims; ++i) {
-        simBoard = board;
+        std::vector<std::vector<std::string>> simBoard = board;
         std::string currentColor = AIcolor;
 
-        // copy vector of available moves for each sim
-        std::vector<int> availableColumns = availableMoves;
+        // randomize and copy allPossibleMoves
+        std::shuffle(allPossibleMoves.begin(), allPossibleMoves.end(), RNG::generator);
+        std::vector<int> possibleMoves = allPossibleMoves;
 
         // first move by AI
-        int index = RNG::randomInt(0, availableColumns.size() - 1);
-        int column = availableColumns[index];
+        int column = possibleMoves.back();
         int trueRow = AI::determineInsertPosition(0, column, simBoard).value();
         simBoard[trueRow][column] = currentColor;
-        availableColumns.erase(availableColumns.begin() + index);
+        possibleMoves.pop_back();
         if (AI::checkWin(trueRow,column,simBoard)) { return column; };
         currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
 
         // sim remaining moves based on available positions
         long long penalty = 1000000;
-        long long moves = 0;
-        while (availableColumns.size() > 0) {
-            int index2 = RNG::randomInt(0, availableColumns.size() - 1);
-            int column2 = availableColumns[index2];
+        while (possibleMoves.size() > 0) {
+            int column2 = possibleMoves.back();
             int trueRow2 = AI::determineInsertPosition(0, column2, simBoard).value();
+            possibleMoves.pop_back();
             simBoard[trueRow2][column2] = currentColor;
-            availableColumns.erase(availableColumns.begin() + index2);
             if (AI::checkWin(trueRow2,column2,simBoard) && currentColor != AIcolor) {
-                winProbability[column] -= penalty;
+                movePenalty[column] -= penalty;
                 break;
             }
             currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
-            ++moves;
-            penalty = (moves != 0 && moves % 2 == 0) ? std::pow(penalty, 0.7) : penalty;
+            penalty = std::pow(penalty, 0.95);
         }
     }
 
+    // select move with lowest penalty
+    std::replace_if(movePenalty.begin(), movePenalty.end(), [&](long long& penalty){ return penalty == 0; }, std::numeric_limits<long long>::min());
+    int bestMove = std::max_element(movePenalty.begin(), movePenalty.end()) - movePenalty.begin();
+
     // for debugging
-    for (int i = 0; i < winProbability.size(); ++i){
-        std::cout << "Column: " << i << " Penalty: " << winProbability[i] << std::endl;
+    for (int i = 0; i < movePenalty.size(); ++i){
+        std::cout << "Column: " << i << " Penalty: " << movePenalty[i] << std::endl;
     }
 
-    // select move with highest win probability (lowest penalty)
-    int bestMoveColumn = availableMoves[RNG::randomInt(0,availableMoves.size() - 1)];
-    for (int column = 0; column < winProbability.size(); ++column) {
-        if (winProbability[column] == 0) { continue; };
-        bestMoveColumn = (winProbability[column] >= winProbability[bestMoveColumn]) ? column : bestMoveColumn;
-    };
-
-    return bestMoveColumn;
+    return bestMove;
 }
 
+int RNG::randomInt(int max) {
+    std::uniform_int_distribution<int> range(0, max);
+    return range(generator);
+}
 
 int RNG::randomInt(int min, int max) {
     std::uniform_int_distribution<int> range(min, max);

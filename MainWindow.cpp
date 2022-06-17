@@ -31,7 +31,10 @@ MainWindow::~MainWindow()
 void MainWindow::AImove()
 {
     if (gameOver) { return; };
-    int column = AI::monteCarloSim(board, AIcolor, 5000);
+    auto begin = std::chrono::high_resolution_clock::now();
+    int column = AI::monteCarloSim(board, AIcolor);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0 << " ms" << std::endl;
     std::optional<int> trueRow = determineInsertPosition(0,column);
     CustomPushButton* button = static_cast<CustomPushButton*>(UI->boardGrid->itemAtPosition(trueRow.value(),column)->widget());
     QPixmap icon((AIcolor == "BLACK") ? ":/Resources/Images/black_dot.png" : ":/Resources/Images/red_dot.png");
@@ -140,6 +143,7 @@ void MainWindow::createUIBoard()
     rows = newDimensions.first;
     columns = newDimensions.second;
     if (rows < minRows || rows > maxRows || columns < minColumns || columns > maxColumns) { rows = defaultRows; columns = defaultColumns; };
+    this->setFixedSize(columns * 100 + 100, rows * 100);
     board = std::vector(rows,std::vector<std::string>(columns));
 
     // create new UI board
@@ -204,6 +208,12 @@ std::pair<int, int> MainWindow::getNewBoardSize() const
             return std::pair{8,9};
         case(5):
             return std::pair{8,10};
+        case(6):
+           return std::pair{10,12};
+        case(7):
+           return std::pair{10,14};
+        case(8):
+           return std::pair{10,15};
     }
 }
 
@@ -289,7 +299,7 @@ void MainWindow::onCustomPushButtonClicked(int row, int column)
     if (AI && !gameOver) {
         disableBoard();
         UI->playerTurnLineEdit->setText("A.I. calculating move...");
-        QTimer::singleShot(RNG::randomInt(100,150), this, &MainWindow::AImove);
+        QTimer::singleShot(RNG::randomInt(50,100), this, &MainWindow::AImove);
     }
 }
 
@@ -304,7 +314,7 @@ void MainWindow::onPlayerWon(std::string color)
     }
     else {
         UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + " victory!");
-        messageBox.setWindowTitle("Victory!");
+        messageBox.setWindowTitle((AI && AIcolor == color) ? "You lost!" : "Victory!");
         messageBox.setText(QString("Player " + QString::fromUtf8(color) + ((color == AIcolor) ? " (A.I.) " : "") + " has won!"));
     }
     messageBox.exec();

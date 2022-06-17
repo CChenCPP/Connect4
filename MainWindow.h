@@ -21,8 +21,8 @@ private:
     static constexpr int minColumns = 4;
     static constexpr int defaultRows = 6;
     static constexpr int defaultColumns = 7;
-    static constexpr int maxRows = 8;
-    static constexpr int maxColumns = 10;
+    static constexpr int maxRows = 10;
+    static constexpr int maxColumns = 15;
     int rows;
     int columns;
     std::vector<std::vector<std::string>> board;
