@@ -32,6 +32,7 @@ void MainWindow::AImove()
 {
     if (gameOver) { return; };
     int column;
+    std::cout << "test " << RNG::randomNum(-100) << std::endl;
     std::cout << Benchmark::timeFunctionMs([&](){ column = AI::monteCarloSim(board, AIcolor);}) << "\n";
 //    int column = AI::monteCarloSim(board, AIcolor);
     std::optional<int> trueRow = determineInsertPosition(0,column);
@@ -298,7 +299,7 @@ void MainWindow::onCustomPushButtonClicked(int row, int column)
     if (AI && !gameOver) {
         disableBoard();
         UI->playerTurnLineEdit->setText("A.I. calculating move...");
-        QTimer::singleShot(RNG::randomInt(50,100), this, &MainWindow::AImove);
+        QTimer::singleShot(RNG::randomNum(50,100), this, &MainWindow::AImove);
     }
 }
 

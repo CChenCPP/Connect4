@@ -128,7 +128,7 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
         }
     };
 
-    if (allPossibleMoves.size() == rows * columns) { return RNG::randomInt(0, columns - 1); };
+    if (allPossibleMoves.size() == rows * columns) { return RNG::randomNum(0, columns - 1); };
 
     std::vector<int64_t> movePenalty(columns);
     for (int i = 0; i < sims; ++i) {
