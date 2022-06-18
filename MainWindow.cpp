@@ -31,10 +31,9 @@ MainWindow::~MainWindow()
 void MainWindow::AImove()
 {
     if (gameOver) { return; };
-    auto begin = std::chrono::high_resolution_clock::now();
-    int column = AI::monteCarloSim(board, AIcolor);
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin).count() / 1000000.0 << " ms" << std::endl;
+    int column;
+    std::cout << Benchmark::timeFunctionMs([&](){ column = AI::monteCarloSim(board, AIcolor);}) << "\n";
+//    int column = AI::monteCarloSim(board, AIcolor);
     std::optional<int> trueRow = determineInsertPosition(0,column);
     CustomPushButton* button = static_cast<CustomPushButton*>(UI->boardGrid->itemAtPosition(trueRow.value(),column)->widget());
     QPixmap icon((AIcolor == "BLACK") ? ":/Resources/Images/black_dot.png" : ":/Resources/Images/red_dot.png");

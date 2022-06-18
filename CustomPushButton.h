@@ -6,8 +6,8 @@ class CustomPushButton : public QPushButton
     Q_OBJECT
 public:
     CustomPushButton(int row, int column, QWidget* parent = nullptr);
-    int getRow();
-    int getColumn();
+    int getRow() const;
+    int getColumn() const;
 
 private:
     int row;

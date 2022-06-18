@@ -2,6 +2,7 @@
 #include <limits>
 #include <iostream>
 
+// namespace AI methods
 bool AI::checkBottom(int row, int column, const std::vector<std::vector<std::string>>& board)
 {
     int rows = board.size();
@@ -108,7 +109,7 @@ std::optional<int> AI::determineInsertPosition(int row, int column, const std::v
 int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const std::string& AIcolor)
 {
     int size = board.size()*board[0].size();
-    int sims = std::pow(std::numeric_limits<int>::max(), 0.6) / size;
+    int sims = std::log10(size) * std::pow(std::numeric_limits<int>::max(), 0.6) / size;
     return monteCarloSim(board, AIcolor, sims);
 }
 
@@ -129,7 +130,7 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
 
     if (allPossibleMoves.size() == rows * columns) { return RNG::randomInt(0, columns - 1); };
 
-    std::vector<long long> movePenalty(columns);
+    std::vector<int64_t> movePenalty(columns);
     for (int i = 0; i < sims; ++i) {
         std::vector<std::vector<std::string>> simBoard = board;
         std::string currentColor = AIcolor;
@@ -147,7 +148,7 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
         currentColor = (currentColor == "BLACK") ? "RED" : "BLACK";
 
         // sim remaining moves based on available positions
-        long long penalty = 1000000;
+        int64_t penalty = 1000000;
         while (possibleMoves.size() > 0) {
             int column2 = possibleMoves.back();
             int trueRow2 = AI::determineInsertPosition(0, column2, simBoard).value();
@@ -163,7 +164,7 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
     }
 
     // select move with lowest penalty
-    std::replace_if(movePenalty.begin(), movePenalty.end(), [&](long long& penalty){ return penalty == 0; }, std::numeric_limits<long long>::min());
+    std::replace_if(movePenalty.begin(), movePenalty.end(), [&](int64_t& penalty){ return penalty == 0; }, std::numeric_limits<int64_t>::min());
     int bestMove = std::max_element(movePenalty.begin(), movePenalty.end()) - movePenalty.begin();
 
     // for debugging
@@ -172,14 +173,4 @@ int AI::monteCarloSim(const std::vector<std::vector<std::string>>& board, const 
     }
 
     return bestMove;
-}
-
-int RNG::randomInt(int max) {
-    std::uniform_int_distribution<int> range(0, max);
-    return range(generator);
-}
-
-int RNG::randomInt(int min, int max) {
-    std::uniform_int_distribution<int> range(min, max);
-    return range(generator);
 }

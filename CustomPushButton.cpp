@@ -2,14 +2,15 @@
 
 CustomPushButton::CustomPushButton(int row, int column, QWidget* parent) : row(row), column(column), QPushButton(parent)
 {
+    if (row < 0 || column < 0) { throw std::out_of_range("Invalid grid index for push button"); };
     connect(this,SIGNAL(clicked(bool)),this,SLOT(customClicked(bool)));
 }
 
-int CustomPushButton::getRow(){
+int CustomPushButton::getRow() const {
     return row;
 }
 
-int CustomPushButton::getColumn(){
+int CustomPushButton::getColumn() const {
     return column;
 }
 

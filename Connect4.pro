@@ -12,6 +12,7 @@ SOURCES += \
     AI.cpp \
     AIPromptWindow.cpp \
     CustomPushButton.cpp \
+    Utility.cpp \
     main.cpp \
     MainWindow.cpp
 
@@ -19,7 +20,8 @@ HEADERS += \
     AI.h \
     AIPromptWindow.h \
     CustomPushButton.h \
-    MainWindow.h
+    MainWindow.h \
+    Utility.h
 
 FORMS += \
     AIPromptWindow.ui \

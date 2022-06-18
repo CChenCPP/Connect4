@@ -17,12 +17,12 @@ public:
     ~MainWindow();
 
 private:
-    static constexpr int minRows = 4;
-    static constexpr int minColumns = 4;
-    static constexpr int defaultRows = 6;
-    static constexpr int defaultColumns = 7;
-    static constexpr int maxRows = 10;
-    static constexpr int maxColumns = 15;
+    static constexpr uint8_t minRows = 4;
+    static constexpr uint8_t minColumns = 4;
+    static constexpr uint8_t defaultRows = 6;
+    static constexpr uint8_t defaultColumns = 7;
+    static constexpr uint8_t maxRows = 10;
+    static constexpr uint8_t maxColumns = 15;
     int rows;
     int columns;
     std::vector<std::vector<std::string>> board;
