@@ -11,7 +11,7 @@ QT_END_NAMESPACE
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-
+    using Board = std::vector<std::vector<std::string>>;
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -25,19 +25,23 @@ private:
     static constexpr uint8_t maxColumns = 15;
     int rows;
     int columns;
-    std::vector<std::vector<std::string>> board;
+    Board board;
     int filledSlots;
     bool gameOver;
     std::string color;
-    std::string AIcolor;
-    bool AI;
+    AI ai;
     Ui::MainWindow* UI;
     AIPromptWindow* aiPromptWindow;
+
     void AImove();
+    std::string alternate(std::string color) const;
+    bool boardIsFull() const;
     bool checkBottom(int row, int column, std::string& color);
     bool checkLeftRight(int row, int column, std::string& color);
     bool checkDiagonal(int row, int column, std::string& color);
+    void createBoard();
     void createUIBoard();
+    void deleteUIBoard();
     std::optional<int> determineInsertPosition(int row, int column) const;
     void disableBoard();
     void enableBoard();
@@ -46,7 +50,7 @@ private:
 
 private slots:
     void onBoardUpdated(int row,int column, std::string color);
-    void onColorPerferenceSelected(std::string color);
+    void onColorPreferenceSelected(std::string color);
     void onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd, std::string color);
     void onCustomPushButtonClicked(int row, int column);
     void onPlayerWon(std::string color);
