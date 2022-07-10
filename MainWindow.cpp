@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this,&MainWindow::boardUpdated,this,&MainWindow::onBoardUpdated);
     connect(this,&MainWindow::connect4,this,&MainWindow::onConnect4);
     connect(this,&MainWindow::playerWon,this,&MainWindow::onPlayerWon);
-    connect(aiPromptWindow,&AIPromptWindow::humanColorSelection,this,&MainWindow::onColorPreferenceSelected);
+    connect(aiPromptWindow,&AIPromptWindow::humanColorSelection,this,&MainWindow::onPlayerColorPreferenceSelected);
 }
 
 MainWindow::~MainWindow()
@@ -33,17 +33,17 @@ void MainWindow::AImove()
 {
     if (gameOver) { return; };
     int column;
-    std::cout << Benchmark::timeFunctionMs([&](){ column = ai.nextMove(21313);}) << "ms\n";
+    std::cout << Benchmark::timeFunctionMs([&](){ column = ai.nextMove();}) << "ms\n";
 //    int column = ai.nextMove();
-    std::optional<int> trueRow = determineInsertPosition(0,column);
+    std::optional<int> trueRow = determineInsertRow(0,column);
     CustomPushButton* button = static_cast<CustomPushButton*>(UI->boardGrid->itemAtPosition(trueRow.value(),column)->widget());
     QPixmap icon((ai.getColor() == "BLACK") ? ":/Resources/Images/black_dot.png" : ":/Resources/Images/red_dot.png");
     button->setIcon(icon);
     board[trueRow.value()][column] = ai.getColor();
-    emit boardUpdated(trueRow.value(),column, ai.getColor());
+    emit boardUpdated(trueRow.value(), column, ai.getColor());
     if (!gameOver) {
         color = alternate(color);
-        UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + "'s turn"); };
+        UI->playerTurnLineEdit->setText("Player " + Parse::toQString(color) + "'s turn"); };
 }
 
 std::string MainWindow::alternate(std::string color) const
@@ -173,7 +173,7 @@ void MainWindow::deleteUIBoard()
     }
 }
 
-std::optional<int> MainWindow::determineInsertPosition(int row, int column) const
+std::optional<int> MainWindow::determineInsertRow(int row, int column) const
 {
     if (board[row][column] != ""){
         return {};
@@ -260,14 +260,6 @@ void MainWindow::onBoardUpdated(int row, int column, std::string color)
     }
 }
 
-void MainWindow::onColorPreferenceSelected(std::string color)
-{
-    reset();
-    std::string aiColor = alternate(color);
-    ai.setActive(true).linkBoard(&board).setColor(aiColor);
-    if (ai.getColor() == this->color) { AImove(); };
-}
-
 void MainWindow::onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd, std::string color)
 {
     // highlights victory cells
@@ -288,7 +280,7 @@ void MainWindow::onConnect4(int rowStart, int columnStart, int rowEnd, int colum
 void MainWindow::onCustomPushButtonClicked(int row, int column)
 {
     if (gameOver) { return; };
-    std::optional<int> trueRow = determineInsertPosition(row,column);
+    std::optional<int> trueRow = determineInsertRow(row,column);
     if (!trueRow){ return; };
 
     disableBoard();
@@ -306,13 +298,21 @@ void MainWindow::onCustomPushButtonClicked(int row, int column)
 
     emit boardUpdated(trueRow.value(),column, color);
     color = alternate(color);
-    UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + "'s turn");
+    UI->playerTurnLineEdit->setText("Player " + Parse::toQString(color) + "'s turn");
 
     if (ai.isActive() && !gameOver) {
         disableBoard();
-        UI->playerTurnLineEdit->setText("A.I. calculating move...");
+        UI->playerTurnLineEdit->setText("AI calculating move...");
         QTimer::singleShot(RNG::randomNum(50,100), this, &MainWindow::AImove);
     }
+}
+
+void MainWindow::onPlayerColorPreferenceSelected(std::string color)
+{
+    reset();
+    std::string aiColor = alternate(color);
+    ai.setActive(true).linkBoard(&board).setColor(aiColor);
+    if (ai.getColor() == this->color) { AImove(); };
 }
 
 void MainWindow::onPlayerWon(std::string color)
@@ -322,12 +322,12 @@ void MainWindow::onPlayerWon(std::string color)
     if (color == "DRAW"){
         UI->playerTurnLineEdit->setText("Draw game");
         messageBox.setWindowTitle("Draw game");
-        messageBox.setText(QString("DRAW GAME"));
+        messageBox.setText(QString("Draw game"));
     }
     else {
-        UI->playerTurnLineEdit->setText("Player " + QString::fromUtf8(color) + " victory!");
+        UI->playerTurnLineEdit->setText("Player " + Parse::toQString(color) + " victory!");
         messageBox.setWindowTitle((ai.isActive() && ai.getColor() == color) ? "You lost!" : "Victory!");
-        messageBox.setText(QString("Player " + QString::fromUtf8(color) + ((ai.isActive() && color == ai.getColor()) ? " (A.I.) " : "") + " has won!"));
+        messageBox.setText(QString("Player " + Parse::toQString(color) + ((ai.isActive() && color == ai.getColor()) ? " (AI) " : "") + " has won!"));
     }
     messageBox.exec();
 }

@@ -42,7 +42,7 @@ private:
     void createBoard();
     void createUIBoard();
     void deleteUIBoard();
-    std::optional<int> determineInsertPosition(int row, int column) const;
+    std::optional<int> determineInsertRow(int row, int column) const;
     void disableBoard();
     void enableBoard();
     std::pair<int,int> getNewBoardSize() const;
@@ -50,9 +50,9 @@ private:
 
 private slots:
     void onBoardUpdated(int row,int column, std::string color);
-    void onColorPreferenceSelected(std::string color);
     void onConnect4(int rowStart, int columnStart, int rowEnd, int columnEnd, std::string color);
     void onCustomPushButtonClicked(int row, int column);
+    void onPlayerColorPreferenceSelected(std::string color);
     void onPlayerWon(std::string color);
     void on_newGamePushButton_clicked();
     void on_newGameAIPushButton_clicked();

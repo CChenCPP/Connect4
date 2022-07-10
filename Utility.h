@@ -1,12 +1,15 @@
 #pragma once
 #include <random>
 #include <chrono>
+#include <string>
+#include <QString>
 
 typedef unsigned char uint8_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
 
-namespace RNG{
+namespace RNG
+{
      static thread_local std::random_device rd;
      static thread_local std::mt19937_64 generator(rd());
 
@@ -38,7 +41,8 @@ namespace RNG{
 
 }
 
-namespace Benchmark{
+namespace Benchmark
+{
     using namespace std::chrono;
     using std::chrono::nanoseconds;
     typedef high_resolution_clock HRC;
@@ -60,4 +64,9 @@ namespace Benchmark{
         double elapsedNs = duration_cast<nanoseconds>(end - begin).count();
         return elapsedNs;
     }
+}
+
+namespace Parse
+{
+    QString toQString(std::string& str);
 }

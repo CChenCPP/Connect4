@@ -142,7 +142,7 @@ bool AI::checkWin(int row, int column, const Board& board) const
     return winB || winLR || winDiag;
 }
 
-std::optional<int> AI::determineInsertPosition(int row, int column, const Board& board) const
+std::optional<int> AI::determineInsertRow(int row, int column, const Board& board) const
 {
     if (board[row][column] != ""){
         return {};
@@ -194,7 +194,7 @@ int AI::monteCarloSim(int sims) const
 
         // first move by AI
         int firstMoveColumn = possibleMoves.back();
-        int firstMoveRow = determineInsertPosition(0, firstMoveColumn, simBoard).value();
+        int firstMoveRow = determineInsertRow(0, firstMoveColumn, simBoard).value();
         simBoard[firstMoveRow][firstMoveColumn] = currentColor;
         possibleMoves.pop_back();
         if (checkWin(firstMoveRow, firstMoveColumn, simBoard)) { return firstMoveColumn; };
@@ -204,7 +204,7 @@ int AI::monteCarloSim(int sims) const
         int64_t penalty = 1000000;
         while (possibleMoves.size() > 0) {
             int column = possibleMoves.back();
-            int row = determineInsertPosition(0, column, simBoard).value();
+            int row = determineInsertRow(0, column, simBoard).value();
             possibleMoves.pop_back();
             simBoard[row][column] = currentColor;
             if (checkWin(row,column,simBoard) && currentColor != color) {

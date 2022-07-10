@@ -29,7 +29,7 @@ private:
      bool checkLeftRight(int row, int column, const Board& board) const;
      bool checkDiagonal(int row, int column, const Board& board) const;
      bool checkWin(int row, int column, const Board& board) const;
-     std::optional<int> determineInsertPosition(int row, int column, const Board& board) const;
+     std::optional<int> determineInsertRow(int row, int column, const Board& board) const;
      std::vector<int> getPossibleMoves() const;
      int monteCarloSim() const;
      int monteCarloSim(int sims) const;
